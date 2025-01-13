@@ -2,16 +2,13 @@ from flask import Flask, render_template, request, jsonify
 import fitz
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import re
+from rouge_score import rouge_scorer
 
 app = Flask(__name__)
 
 MODEL_NAME = "pegasus-finetuned"
 model = PegasusForConditionalGeneration.from_pretrained(MODEL_NAME)
 tokenizer = PegasusTokenizer.from_pretrained(MODEL_NAME)
-
-@app.route('/')
-def home():
-    return render_template('home.html')
 
 def split_text(text, chunk_size=512):
     """Bagi teks panjang menjadi potongan kecil (chunks)."""
@@ -50,6 +47,10 @@ def summarize_text(text, chunk_size=512, max_summary_length=64):
     combined_summary = " ".join(summaries)
     return combined_summary
 
+@app.route('/')
+def home():
+    return render_template('home.html')
+
 @app.route('/summarization', methods=['GET', 'POST'])
 def summarization():
     if request.method == 'POST':
@@ -85,6 +86,61 @@ def summarization():
 @app.route('/evaluation', methods=['GET'])
 def evaluation():
     return render_template('evaluation.html')
+
+@app.route('/evaluate_abstraks', methods=['POST'])
+def evaluate_abstraks():
+    data = request.get_json()
+
+    abstract_1 = data.get('abstract_1')
+    abstract_2 = data.get('abstract_2')
+
+    # Initialize Rouge scorer
+    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+
+    # Calculate ROUGE scores
+    scores = scorer.score(abstract_1, abstract_2)
+
+    # Extract F1 scores
+    rouge_1_f1 = scores['rouge1'].fmeasure
+    rouge_2_f1 = scores['rouge2'].fmeasure
+    rouge_l_f1 = scores['rougeL'].fmeasure
+
+    # Calculate dynamic rating based on F1 scores
+    average_f1_score = (rouge_1_f1 + rouge_2_f1 + rouge_l_f1) / 3
+
+    # Define Rating based on average F1 score
+    if average_f1_score > 0.6:
+        rating = 'Excellent'
+        remarks = 'The abstracts are highly similar and well-formed.'
+    elif average_f1_score > 0.4:
+        rating = 'Good'
+        remarks = 'The abstracts are somewhat similar with room for improvement.'
+    else:
+        rating = 'Poor'
+        remarks = 'The abstracts are quite different and need further refinement.'
+
+    # Prepare response
+    evaluation_result = {
+        'rouge_1': {
+            'precision': f"{scores['rouge1'].precision:.4f}",
+            'recall': f"{scores['rouge1'].recall:.4f}",
+            'fmeasure': f"{rouge_1_f1:.4f}",
+        },
+        'rouge_2': {
+            'precision': f"{scores['rouge2'].precision:.4f}",
+            'recall': f"{scores['rouge2'].recall:.4f}",
+            'fmeasure': f"{rouge_2_f1:.4f}",
+        },
+        'rouge_l': {
+            'precision': f"{scores['rougeL'].precision:.4f}",
+            'recall': f"{scores['rougeL'].recall:.4f}",
+            'fmeasure': f"{rouge_l_f1:.4f}",
+        },
+        'rating': rating,
+        'remarks': remarks
+    }
+
+    return jsonify(evaluation_result)
 
 if __name__ == '__main__':
     app.run(debug=True)

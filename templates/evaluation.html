@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluation - SMARTSMRZ</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -36,33 +34,65 @@
             <div class="col-md-6">
                 <div class="text-box">
                     <h3>Abstract SMARTSMRZ</h3>
-                    <textarea class="form-control" rows="10" placeholder="Enter text here..."></textarea>
+                    <textarea id="abstract_1" class="form-control" rows="10" placeholder="Enter first abstract here..."></textarea>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="text-box">
                     <h3>Original Abstract</h3>
-                    <textarea class="form-control" rows="10" placeholder="Enter text here..."></textarea>
+                    <textarea id="abstract_2" class="form-control" rows="10" placeholder="Enter second abstract here..."></textarea>
                 </div>
             </div>
         </div>
         <div class="button-container">
-            <button class="btn btn-eval mt-2" data-bs-toggle="modal" data-bs-toggle="modal" data-bs-target="#evaluationModal">
-                Evaluation Abstract
+            <button id="evaluate_button" class="btn btn-eval mt-2" data-bs-toggle="modal" data-bs-target="#evaluationModal">
+                Evaluate Abstracts
             </button>
         </div>
     </div>
 
     <!-- Modal -->
     <div class="modal fade" id="evaluationModal" tabindex="-1" aria-labelledby="evaluationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-teal">
                     <h5 class="modal-title" id="evaluationModalLabel">Evaluation Result</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Test</p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>ROUGE-1</h6>
+                            <p id="rouge_1"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>ROUGE-2</h6>
+                            <p id="rouge_2"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>ROUGE-L</h6>
+                            <p id="rouge_l"></p>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Evaluation Rating</h6>
+                            <p id="evaluation_rating"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Remarks</h6>
+                            <p id="evaluation_remarks"></p>
+                        </div>
+                    </div>
+
+                    <!-- Penjelasan tentang ROUGE -->
+                    <hr>
+                    <h6>What is ROUGE?</h6>
+                    <p><strong>ROUGE-1</strong> is a metric for evaluating text summaries based on unigrams (single words). It compares the overlap between the unigrams in the reference and generated summaries.</p>
+                    <p><strong>ROUGE-2</strong> is similar to ROUGE-1, but it evaluates the overlap of bigrams (two consecutive words) between the reference and generated summaries.</p>
+                    <p><strong>ROUGE-L</strong> evaluates the longest common subsequence (LCS) between the reference and generated summaries. It takes into account the longest sequence of words that appear in both summaries in the same order.</p>
                 </div>
             </div>
         </div>
@@ -70,5 +100,41 @@
 
     <!-- Bootstrap JS Bundle (with Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle evaluation on button click
+        document.getElementById('evaluate_button').addEventListener('click', function() {
+            const abstract1 = document.getElementById('abstract_1').value;
+            const abstract2 = document.getElementById('abstract_2').value;
+
+            // Make AJAX request to evaluate the abstracts
+            fetch('/evaluate_abstraks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    abstract_1: abstract1,
+                    abstract_2: abstract2
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show the evaluation result in the modal
+                document.getElementById('rouge_1').innerText = 
+                    `Precision: ${data.rouge_1.precision}\nRecall: ${data.rouge_1.recall}\nF1 Score: ${data.rouge_1.fmeasure}`;
+                document.getElementById('rouge_2').innerText = 
+                    `Precision: ${data.rouge_2.precision}\nRecall: ${data.rouge_2.recall}\nF1 Score: ${data.rouge_2.fmeasure}`;
+                document.getElementById('rouge_l').innerText = 
+                    `Precision: ${data.rouge_l.precision}\nRecall: ${data.rouge_l.recall}\nF1 Score: ${data.rouge_l.fmeasure}`;
+
+                // Evaluation Rating and Remarks
+                document.getElementById('evaluation_rating').innerText = data.rating;
+                document.getElementById('evaluation_remarks').innerText = data.remarks;
+            })
+            .catch(error => {
+                document.getElementById('evaluation_result').innerText = 'Error during evaluation';
+            });
+        });
+    </script>
 </body>
 </html>

@@ -192,8 +192,6 @@ h3 {
     max-height: 250px;
 }
 
-
-
 .header {
     background-color: #FF6F00;
     color: white;
@@ -210,4 +208,44 @@ h3 {
 .button-container {
     margin-top: 20px;
     text-align: center;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 10px;
+}
+
+.modal-header {
+    background-color: #FF6F00;
+    color: #ffffff;
+}
+
+#rouge_1, #rouge_2, #rouge_l {
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#evaluation_rating, #evaluation_remarks {
+    font-size: 16px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body h6 {
+    font-weight: bold;
+}
+
+.modal-body p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+hr {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-top: 1px solid #ddd;
 }
